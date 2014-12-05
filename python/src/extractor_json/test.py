@@ -59,43 +59,45 @@ class Test(unittest.TestCase):
         ]
 
     def test_t(self):
+        # buf1 and buf2 are text buffers used to pass data to, from and between mappers/reducers
         buf1 = StringIO()
         buf2 = StringIO()
         m = mapper1.Mapper(StringIO(self.test_input), buf1)
         m.run()
-        l = buf1.getvalue().split("\n")
+        l = buf1.getvalue().split("\n")  # sort mappers output similar way as Hadoop does
         l.sort()
         buf1 = StringIO("\n".join(l[1:]))
         r = reducer1.Reducer(buf1, buf2)
         r.run()
-        buf2.seek(0)
+        buf2.seek(0)  # rewind buffer (make input buffer from output one)
         buf1 = StringIO()
         m = mapper2.Mapper(buf2, buf1)
         m.run()
-        l = buf1.getvalue().split("\n")
+        l = buf1.getvalue().split("\n")  # sort mappers output similar way as Hadoop does
         l.sort()
         buf1 = StringIO("\n".join(l[1:]))
         buf2 = StringIO()
         r = reducer2.Reducer(buf1, buf2)
         r.run()
-        l = buf2.getvalue().split("\n")
+        l = buf2.getvalue().split("\n")  # sort mappers output similar way as Hadoop does
         l.sort()
         buf2 = StringIO("\n".join(l[1:]))
         buf1 = StringIO()
         r = reducer3.Reducer(buf2, buf1)
         r.run()
-        buf1.seek(0)
+        buf1.seek(0) # rewind buffer (make input buffer from output one)
 
         t_out = []
         for line in buf1:
-            t_out.append(json.loads(line))
-        self.assertEqual(len(t_out), len(self.test_output))
+            t_out.append(json.loads(line))  # concat outputted JSON objects to list
+
+        self.assertEqual(len(t_out), len(self.test_output))  # number of returned JSON objects should be correct
         for i in range(len(t_out)):
-            self.assertCountEqual(t_out[i].keys(), self.test_output[i].keys())
-            self.assertEqual(t_out[i]['id'], self.test_output[i]['id'], "IDs not equal in: "+json.dumps(t_out[i]))
-            self.assertEqual(t_out[i]['name'], self.test_output[i]['name'], "Names not equal in: "+json.dumps(t_out[i]))
-            self.assertCountEqual(t_out[i]['alias'], self.test_output[i]['alias'], "Aliases not equal in: "+json.dumps(t_out[i]))
-            self.assertCountEqual(t_out[i]['type'], self.test_output[i]['type'], "Types not equal in: "+json.dumps(t_out[i]))
+            self.assertCountEqual(t_out[i].keys(), self.test_output[i].keys())  # returned objects must have all excepted attributes
+            self.assertEqual(t_out[i]['id'], self.test_output[i]['id'], "IDs not equal in: "+json.dumps(t_out[i]))  # IDs must be equal
+            self.assertEqual(t_out[i]['name'], self.test_output[i]['name'], "Names not equal in: "+json.dumps(t_out[i]))  # Names must be equal
+            self.assertCountEqual(t_out[i]['alias'], self.test_output[i]['alias'], "Aliases not equal in: "+json.dumps(t_out[i]))  # Aliases must be equal, order can differ
+            self.assertCountEqual(t_out[i]['type'], self.test_output[i]['type'], "Types not equal in: "+json.dumps(t_out[i]))  # Types must be equal, order can differ
 
 if __name__ == "__main__":
     unittest.main()
